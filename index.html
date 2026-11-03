@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Typy – Analiza</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --safe: #166534;
+      --safe-bg: #14532d;
+      --medium: #a16207;
+      --medium-bg: #422006;
+      --risky: #991b1b;
+      --risky-bg: #450a0a;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }uu
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding-bottom: 80px;
+      min-height: 100vh;
+    }
+    header {
+      background: #020617;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; }
+    header .bank { font-size: 0.85rem; color: var(--muted); }
+    .tabs {
+      display: flex;
+      background: #020617;
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 52px;
+      z-index: 40;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .content { padding: 12px 12px 20px; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border-left: 4px solid #475569;
+    }
+    .card.safe { border-left-color: #22c55e; background: linear-gradient(90deg, #14532d33, var(--card)); }
+    .card.medium { border-left-color: #eab308; background: linear-gradient(90deg, #42200633, var(--card)); }
+    .card.risky { border-left-color: #ef4444; background: linear-gradient(90deg, #450a0a33, var(--card)); }
+    .match { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
+    .league { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
+    .pick { font-size: 1.15rem; font-weight: 700; color: #38bdf8; }
+    .odds { font-weight: 600; }
+    .meta { font-size: 0.8rem; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge.safe { background: #166534; color: #bbf7d0; }
+    .badge.medium { background: #a16207; color: #fef08a; }
+    .badge.risky { background: #991b1b; color: #fecaca; }
+    .btn {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn:active { opacity: 0.85; }
+    .btn.secondary { background: #334155; }
+    .btn.success { background: #16a34a; }
+    .btn.danger { background: #dc2626; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .metric {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .metric .val { font-size: 1.1rem; font-weight: 700; }
+    .metric .label { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 16px 0 8px;
+      font-weight: 600;
+    }
+    .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+    .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .filters label {
+      font-size: 0.8rem;
+      background: var(--card);
+      padding: 6px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-box {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .info-box b { color: var(--text); }
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #020617;
+      border-top: 1px solid #1e293b;
+      padding: 8px 12px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚽ Typy</h1>
+    <div class="bank">100 zł • stawka 10 zł</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="dzisiaj">Dzisiaj</div>
+    <div class="tab" data-tab="historia">Historia</div>
+    <div class="tab" data-tab="info">Info</div>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <footer>
+    Wersja prywatna • Dane przykładowe • Historia zapisuje się lokalnie na telefonie
+  </footer>
+
+  <script>
+    const TODAY = new Date().toISOString().slice(0, 10);
+    const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    const SAMPLE_MATCHES = [
+      {
+        league: "Premier League",
+        match: "Arsenal - Liverpool",
+        kickoff: "18:30",
+        home_scored: 1.9, home_conceded: 0.9,
+        away_scored: 2.1, away_conceded: 1.1,
+        odds: { "1": 2.40, "X": 3.40, "2": 2.90, "Over 2.5": 1.75, "Under 2.5": 2.10, "BTTS Tak": 1.65, "BTTS Nie": 2.20 }
+      },
+      {
+        league: "La Liga",
+        match: "Real Madrid - Girona",
+        kickoff: "21:00",
+        home_scored: 2.3, home_conceded: 0.7,
+        away_scored: 1.4, away_conceded: 1.5,
+        odds: { "1": 1.45, "X": 4.50, "2": 6.50, "Over 2.5": 1.60, "Under 2.5": 2.30, "BTTS Tak": 1.85, "BTTS Nie": 1.95 }
+      },
+      {
+        league: "Serie A",
+        match: "Inter - Napoli",
+        kickoff: "20:45",
+        home_scored: 1.8, home_conceded: 0.8,
+        away_scored: 1.7, away_conceded: 1.0,
+        odds: { "1": 2.10, "X": 3.30, "2": 3.40, "Over 2.5": 1.90, "Under 2.5": 1.95, "BTTS Tak": 1.70, "BTTS Nie": 2.10 }
+      },
+      {
+        league: "Bundesliga",
+        match: "Bayern - Dortmund",
+        kickoff: "18:30",
+        home_scored: 2.6, home_conceded: 1.0,
+        away_scored: 2.0, away_conceded: 1.3,
+        odds: { "1": 1.70, "X": 4.20, "2": 4.00, "Over 2.5": 1.45, "Under 2.5": 2.70, "BTTS Tak": 1.55, "BTTS Nie": 2.40 }
+      }
+    ];
+
+    function poissonPmf(k, lambda) {
+      if (lambda <= 0) return k === 0 ? 1 : 0;
+      let p = Math.exp(-lambda);
+      for (let i = 1; i <= k; i++) p *= lambda / i;
+      return p;
+    }
+
+    function calcProbs(homeXg, awayXg) {
+      const maxG = 7;
+      let pHome = 0, pDraw = 0, pAway = 0, pOver = 0, pBttsYes = 0;
+      for (let h = 0; h <= maxG; h++) {
+        for (let a = 0; a <= maxG; a++) {
+          const p = poissonPmf(h, homeXg) * poissonPmf(a, awayXg);
+          if (h > a) pHome += p;
+          else if (h === a) pDraw += p;
+          else pAway += p;
+          if (h + a > 2.5) pOver += p;
+          if (h > 0 && a > 0) pBttsYes += p;
+        }
+      }
+      return {
+        "1": pHome, "X": pDraw, "2": pAway,
+        "Over 2.5": pOver, "Under 2.5": 1 - pOver,
+        "BTTS Tak": pBttsYes, "BTTS Nie": 1 - pBttsYes
+      };
+    }
+
+    function expectedGoals(hs, hc, as, ac) {
+      const homeXg = Math.max(0.4, (hs + ac) / 2 + 0.25);
+      const awayXg = Math.max(0.3, (as + hc) / 2);
+      return [homeXg, awayXg];
+    }
+
+    function classifyRisk(prob, edge) {
+      if (prob >= 0.68 && edge >= 0.03) return "Niskie";
+      if (prob >= 0.58 && edge >= 0.02) return "Średnie";
+      return "Wysokie";
+    }
+
+    function kelly(prob, odds, frac = 0.25) {
+      if (odds <= 1 || prob <= 0) return 0;
+      const b = odds - 1;
+      const k = (b * prob - (1 - prob)) / b;
+      return Math.max(0, k * frac * 100);
+    }
+
+    function generateRecs() {
+      const recs = [];
+      SAMPLE_MATCHES.forEach(m => {
+        const [hx, ax] = expectedGoals(m.home_scored, m.home_conceded, m.away_scored, m.away_conceded);
+        const probs = calcProbs(hx, ax);
+        const markets = [
+          ["1X2", "1"], ["1X2", "X"], ["1X2", "2"],
+          ["Over/Under", "Over 2.5"], ["Over/Under", "Under 2.5"],
+          ["BTTS", "BTTS Tak"], ["BTTS", "BTTS Nie"]
+        ];
+        markets.forEach(([market, pick]) => {
+          if (!m.odds[pick]) return;
+          const odds = m.odds[pick];
+          const modelProb = probs[pick] || 0;
+          const implied = 1 / odds;
+          const edge = modelProb - implied;
+          if (modelProb < 0.52 && edge < 0.015) return;
+          const risk = classifyRisk(modelProb, edge);
+          const kellyPct = kelly(modelProb, odds);
+          let stake = Math.max(10, Math.round((100 * kellyPct / 100) / 5) * 5);
+          if (stake > 15) stake = 10;
+          recs.push({
+            date: TODAY,
+            league: m.league,
+            match: m.match,
+            kickoff: m.kickoff,
+            market,
+            pick,
+            model_prob: modelProb,
+            odds,
+            edge,
+            risk,
+            kelly_pct: kellyPct,
+            stake,
+            id: `${TODAY}_${m.match}_${pick}`
+          });
+        });
+      });
+      const order = { "Niskie": 0, "Średnie": 1, "Wysokie": 2 };
+      return recs.sort((a, b) => order[a.risk] - order[b.risk] || b.edge - a.edge);
+    }
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem("typy_history");
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      const sample = [
+        {
+          id: `${YESTERDAY}_Man City - Chelsea_1`,
+          date: YESTERDAY,
+          league: "Premier League",
+          match: "Manchester City - Chelsea",
+          pick: "1",
+          model_prob: 0.71,
+          odds: 1.55,
+          edge: 0.065,
+          risk: "Niskie",
+          stake: 10,
+          result: "W",
+          profit: 5.5,
+          actual_score: "3:1"
+        },
+        {
+          id: `${YESTERDAY}_Barcelona - Sevilla_Over 2.5`,
+          date: YESTERDAY,
+          league: "La Liga",
+          match: "Barcelona - Sevilla",
+          pick: "Over 2.5",
+          model_prob: 0.64,
+          odds: 1.70,
+          edge: 0.052,
+          risk: "Średnie",
+          stake: 10,
+          result: "W",
+          profit: 7.0,
+          actual_score: "4:1"
+        },
+        {
+          id: `${YESTERDAY}_Juventus - Atalanta_2`,
+          date: YESTERDAY,
+          league: "Serie A",
+          match: "Juventus - Atalanta",
+          pick: "2",
+          model_prob: 0.48,
+          odds: 3.10,
+          edge: 0.157,
+          risk: "Wysokie",
+          stake: 10,
+          result: "P",
+          profit: -10,
+          actual_score: "1:0"
+        }
+      ];
+      saveHistory(sample);
+      return sample;
+    }
+
+    function saveHistory(data) {
+      localStorage.setItem("typy_history", JSON.stringify(data));
+    }
+
+    function addToHistory(rec) {
+      const hist = loadHistory();
+      if (hist.find(h => h.id === rec.id)) return false;
+      hist.unshift({ ...rec, result: null, profit: null });
+      saveHistory(hist);
+      return true;
+    }
+
+    function setResult(id, result) {
+      const hist = loadHistory();
+      const item = hist.find(h => h.id === id);
+      if (!item) return;
+      item.result = result;
+      item.profit = result === "W" ? +(item.stake * (item.odds - 1)).toFixed(2) : -item.stake;
+      saveHistory(hist);
+    }
+
+    function calcBalance(hist) {
+      const settled = hist.filter(h => h.result === "W" || h.result === "P");
+      const wins = settled.filter(h => h.result === "W").length;
+      const profit = settled.reduce((s, h) => s + (h.profit || 0), 0);
+      const staked = settled.reduce((s, h) => s + (h.stake || 10), 0);
+      return {
+        count: settled.length,
+        wins,
+        accuracy: settled.length ? +(wins / settled.length * 100).toFixed(1) : 0,
+        profit: +profit.toFixed(2),
+        roi: staked ? +(profit / staked * 100).toFixed(1) : 0
+      };
+    }
+
+    let currentTab = "dzisiaj";
+    let onlySafe = false;
+
+    function render() {
+      const content = document.getElementById("content");
+      if (currentTab === "dzisiaj") {
+        const recs = generateRecs().filter(r => !onlySafe || r.risk === "Niskie");
+        const safe = recs.filter(r => r.risk === "Niskie");
+        const other = recs.filter(r => r.risk !== "Niskie");
+
+        let html = `
+          <div class="filters">
+            <label><input type="checkbox" id="onlySafe" ${onlySafe ? "checked" : ""}> Tylko niskie ryzyko</label>
+          </div>
+        `;
+
+        if (safe.length) {
+          html += `<div class="section-title">🟢 Bezpieczniejsze</div>`;
+          safe.forEach(r => html += cardHtml(r));
+        }
+        if (other.length) {
+          html += `<div class="section-title">🟡 / 🔴 Średnie i wyższe ryzyko</div>`;
+          other.forEach(r => html += cardHtml(r));
+        }
+        if (!recs.length) html += `<div class="empty">Brak rekomendacji przy obecnych filtrach</div>`;
+        content.innerHTML = html;
+
+        document.getElementById("onlySafe")?.addEventListener("change", e => {
+          onlySafe = e.target.checked;
+          render();
+        });
+        document.querySelectorAll("[data-save]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-save");
+            const rec = generateRecs().find(r => r.id === id);
+            if (rec && addToHistory(rec)) {
+              btn.textContent = "Zapisano ✓";
+              btn.disabled = true;
+            } else {
+              btn.textContent = "Już w historii";
+            }
+          });
+        });
+      }
+
+      else if (currentTab === "historia") {
+        const hist = loadHistory();
+        const bal = calcBalance(hist);
+        let html = `
+          <div class="metrics">
+            <div class="metric"><div class="val">${bal.count}</div><div class="label">Typy</div></div>
+            <div class="metric"><div class="val">${bal.accuracy}%</div><div class="label">Skuteczność</div></div>
+            <div class="metric"><div class="val" style="color:${bal.profit >= 0 ? '#22c55e' : '#ef4444'}">${bal.profit} zł</div><div class="label">Zysk</div></div>
+            <div class="metric"><div class="val">${bal.roi}%</div><div class="label">ROI</div></div>
+          </div>
+        `;
+        if (!hist.length) {
+          html += `<div class="empty">Brak historii. Zapisz typy z zakładki Dzisiaj.</div>`;
+        } else {
+          hist.forEach(h => {
+            const icon = h.result === "W" ? "✅" : h.result === "P" ? "❌" : "⏳";
+            const profitStr = h.profit != null ? (h.profit > 0 ? `+${h.profit} zł` : `${h.profit} zł`) : "—";
+            const riskClass = (h.risk || "").toLowerCase().replace("ś", "s").replace("ę", "e");
+            html += `
+              <div class="card ${riskClass === "niskie" ? "safe" : riskClass === "srednie" ? "medium" : "risky"}">
+                <div class="match">${icon} ${h.match}</div>
+                <div class="league">${h.league} • ${h.date}</div>
+                <div><span class="pick">${h.pick}</span> @ <span class="odds">${h.odds}</span></div>
+                <div class="meta">
+                  Model ${(h.model_prob * 100).toFixed(0)}% • ${h.risk || ""} • Stawka ${h.stake} zł → <b>${profitStr}</b>
+                  ${h.actual_score ? `• Wynik: ${h.actual_score}` : ""}
+                </div>
+                ${h.result == null ? `
+                  <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn success" style="flex:1" data-win="${h.id}">Weszło</button>
+                    <button class="btn danger" style="flex:1" data-lose="${h.id}">Nie weszło</button>
+                  </div>
+                ` : ""}
+              </div>
+            `;
+          });
+        }
+        content.innerHTML = html;
+
+        document.querySelectorAll("[data-win]").forEach(btn => {
+          btn.addEventListener("click", () => { setResult(btn.getAttribute("data-win"), "W"); render(); });
+        });
+        document.querySelectorAll("[data-lose]").forEach(btn => {
+          btn.addEventListener("click", () => { setResult(btn.getAttribute("data-lose"), "P"); render(); });
+        });
+      }
+
+      else if (currentTab === "info") {
+        content.innerHTML = `
+          <div class="info-box">
+            <b>Jak to działa</b><br><br>
+            Model liczy prawdopodobieństwa na podstawie formy strzeleckiej i obronnej drużyn (Poisson + przewaga boiska).<br><br>
+            <b>Bezpieczne</b> – wysokie prawdopodobieństwo modelu + dodatni edge (kurs lepszy niż model).<br>
+            <b>Średnie / Wysokie</b> – oznaczone kolorem, żebyś wiedział, że to większe ryzyko.<br><br>
+            <b>Historia</b> zapisuje się lokalnie na Twoim telefonie (localStorage). Możesz sprawdzać, czy typ by wszedł i jak wygląda bilans.<br><br>
+            <b>Uwaga:</b> To wersja demonstracyjna z przykładowymi meczami. W kolejnej wersji podłączymy automatyczne pobieranie prawdziwych kursów i wyników.<br><br>
+            Bankroll: 100 zł • Stawka bazowa: 10 zł
+          </div>
+        `;
+      }
+    }
+
+    function cardHtml(r) {
+      const riskClass = r.risk === "Niskie" ? "safe" : r.risk === "Średnie" ? "medium" : "risky";
+      const badgeClass = riskClass;
+      return `
+        <div class="card ${riskClass}">
+          <div class="match">${r.match}</div>
+          <div class="league">${r.league} • ${r.kickoff}</div>
+          <div><span class="pick">${r.pick}</span> @ <span class="odds">${r.odds}</span></div>
+          <div class="meta">
+            <span>Model <b>${(r.model_prob * 100).toFixed(1)}%</b></span>
+            <span>Edge <b>${(r.edge * 100).toFixed(1)}%</b></span>
+            <span class="badge ${badgeClass}">${r.risk}</span>
+          </div>
+          <div class="meta">Stawka: <b>${r.stake} zł</b> (Kelly ${r.kelly_pct.toFixed(1)}%)</div>
+          <button class="btn" data-save="${r.id}">Zapisz do historii</button>
+        </div>
+      `;
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        currentTab = tab.dataset.tab;
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>
